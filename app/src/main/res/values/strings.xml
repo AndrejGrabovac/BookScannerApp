@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">ISBN Scanner</string>
+    <string name="inbox">Inbox</string>
+    <string name="history">History</string>
+
+    <string name="drawer_home">Home</string>
+    <string name="drawer_history">History</string>
+
+    <string name="drawer_open">Open drawer</string>
+    <string name="drawer_close">Close drawer</string>
+    <string name="scan">Scan</string>
+    <string name="book_title">Book Title: </string>
+    <string name="book_authors">Book Authors: </string>
+    <string name="publish_year">Publish year: </string>
+    <string name="isbn_number">ISBN Number: </string>
+    <string name="scan_isbn">Scan ISBN</string>
+</resources>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:id="@+id/HomeFragment"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".HomeFragment">
+
+    <TextView
+        android:id="@+id/isbn_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="15dp"
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/author_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/isbn_text_view"
+        android:layout_marginTop="30dp"
+        android:padding="15dp"
+        android:textSize="20sp" />
+
+    <TextView
+        android:id="@+id/title_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/author_text_view"
+        android:layout_marginTop="30dp"
+        android:padding="15dp"
+        android:textSize="20sp" />
+
+    <TextView
+        android:layout_marginTop="30dp"
+        android:layout_below="@+id/title_text_view"
+        android:id="@+id/publication_date_text_view"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="15dp"
+        android:textSize="20sp" />
+
+    <Button
+        android:id="@+id/scan_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/publication_date_text_view"
+        android:layout_gravity="center"
+        android:layout_marginTop="115dp"
+        android:text="@string/scan_isbn"
+        android:onClick="Bundle"/>
+
+</RelativeLayout>

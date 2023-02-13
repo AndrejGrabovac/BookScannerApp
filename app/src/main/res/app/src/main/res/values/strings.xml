@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">UniverseMail</string>
+
+    <string name="inbox">Inbox</string>
+    <string name="history">History</string>
+
+    <string name="drawer_home">Home</string>
+    <string name="drawer_history">History</string>
+
+    <string name="drawer_open">Open drawer</string>
+    <string name="drawer_close">Close drawer</string>
+</resources>
