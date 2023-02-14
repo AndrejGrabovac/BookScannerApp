@@ -1,13 +1,9 @@
 package com.example.isbnscanner;
 
-import static android.content.Context.MODE_PRIVATE;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -26,6 +22,7 @@ import com.android.volley.toolbox.Volley;
 import com.google.zxing.integration.android.IntentIntegrator;
 import com.google.zxing.integration.android.IntentResult;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -38,8 +35,6 @@ public class HomeFragment extends Fragment{
     private TextView titleTextView;
     private TextView publicationDateTextView;
     private RequestQueue queue;
-    private SharedPreferences SharedPreferences;
-    public static final String SHARED_PREFERENCES_NAME = "BookInfo";
     private Context MainActivity;
 
 
@@ -61,27 +56,23 @@ public class HomeFragment extends Fragment{
         titleTextView = view.findViewById(R.id.title_text_view);
         publicationDateTextView = view.findViewById(R.id.publication_date_text_view);
         scanButton = view.findViewById(R.id.scan_button);
-        SharedPreferences = requireActivity().getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE);
 
         queue = Volley.newRequestQueue(this.requireContext());
 
         scanButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                scanISBN();
+                IntentIntegrator integrator = IntentIntegrator.forSupportFragment(HomeFragment.this);
+                integrator.setDesiredBarcodeFormats(IntentIntegrator.ONE_D_CODE_TYPES);
+                integrator.setPrompt("Scan an ISBN code");
+                integrator.setCameraId(0);
+                integrator.setBeepEnabled(false);
+                integrator.setBarcodeImageEnabled(false);
+                integrator.initiateScan();
+
             }
         });
         return view;
-    }
-
-    private void scanISBN() {
-        IntentIntegrator integrator = IntentIntegrator.forSupportFragment(HomeFragment.this);
-        integrator.setDesiredBarcodeFormats(IntentIntegrator.ONE_D_CODE_TYPES);
-        integrator.setPrompt("Scan an ISBN code");
-        integrator.setCameraId(0);
-        integrator.setBeepEnabled(false);
-        integrator.setBarcodeImageEnabled(false);
-        integrator.initiateScan();
     }
 
     @SuppressLint("SetTextI18n")
@@ -92,55 +83,84 @@ public class HomeFragment extends Fragment{
             if (result.getContents() == null) {
                 Toast.makeText(MainActivity, "Scan cancelled", Toast.LENGTH_LONG).show();
             } else {
+
                 String isbn = result.getContents();
                 isbnTextView.setText("ISBN: " + isbn);
-                retrieveBookInformation(isbn);
+                getBookDetails(isbn);
             }
         } else {
             super.onActivityResult(requestCode, resultCode, data);
         }
     }
 
-    private void retrieveBookInformation(String isbn) {
-        String apiUrl = "https://www.googleapis.com/books/v1/volumes?q=isbn:" + isbn;
+    private void getBookDetails(String isbn) {
+        String url = "https://www.googleapis.com/books/v1/volumes?q=isbn:" + isbn;
 
-        JsonObjectRequest request = new JsonObjectRequest(Request.Method.GET, apiUrl, null,
-                new Response.Listener<JSONObject>() {
-                    @SuppressLint("SetTextI18n")
+        RequestQueue queue = Volley.newRequestQueue(requireContext());
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
+                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
+
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                            JSONObject volumeInfo = response.getJSONArray("items").getJSONObject(0).getJSONObject("volumeInfo");
-                            String author = volumeInfo.getJSONArray("authors").getString(0);
-                            String title = volumeInfo.getString("title");
-                            String publicationDate = volumeInfo.getString("publishedDate");
+                            JSONArray items = response.getJSONArray("items");
+                            if (items.length() > 0) {
+                                JSONObject volumeInfo = items.getJSONObject(0).getJSONObject("volumeInfo");
 
-                            authorTextView.setText("Author: " + author);
-                            titleTextView.setText("Title: " + title);
-                            publicationDateTextView.setText("Publication Date: " + publicationDate);
+                                String title = volumeInfo.getString("title");
 
-                            saveBookToPreferences(isbn, author, title, publicationDate);
+                                JSONArray authorsArray = volumeInfo.getJSONArray("authors");
+                                String authors = "";
+                                for (int i = 0; i < authorsArray.length(); i++) {
+                                    authors += authorsArray.getString(i) + ", ";
+                                }
+                                authors = authors.substring(0, authors.length() - 2);
+
+                                String date = volumeInfo.getString("publishedDate");
+
+                                titleTextView.setText(String.format("Title: %s", title));
+                                authorTextView.setText(String.format("Authors: %s", authors));
+                                publicationDateTextView.setText(String.format("Publish date: %s", date));
+
+
+
+
+                                Book book = new Book(isbn,authors,title,date);
+
+                                String finalAuthors = authors;
+                                AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        book.setIsbn(isbn);
+                                        book.setAuthors(finalAuthors);
+                                        book.setName(title);
+                                        book.setDate(date);
+                                    }
+                                });
+
+                                AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        AppDatabase db = AppDatabase.getInstance(getContext());
+                                        BookDao bookDao = db.bookDao();
+                                        bookDao.insert(book);
+                                    }
+                                });
+
+                            } else {
+                                Toast.makeText(getContext(), "No book found", Toast.LENGTH_SHORT).show();
+                            }
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
                     }
                 }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("MainActivity", "Error with API request");
-            }
-        });
 
-        queue.add(request);
-    }
-
-    private void saveBookToPreferences(String isbn, String author, String title, String publicationDate) {
-        SharedPreferences preferences = requireContext().getSharedPreferences(SHARED_PREFERENCES_NAME, MODE_PRIVATE);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putString("isbn", isbn);
-        editor.putString("author", author);
-        editor.putString("title", title);
-        editor.putString("publication_date", publicationDate);
-        editor.apply();
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Toast.makeText(getContext(), "Error: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+                    }
+                });
+        queue.add(jsonObjectRequest);
     }
 }

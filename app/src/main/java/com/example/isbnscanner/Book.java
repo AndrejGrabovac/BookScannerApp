@@ -1,58 +1,62 @@
 package com.example.isbnscanner;
 
+import androidx.room.Entity;
+import androidx.room.PrimaryKey;
+
+@Entity
 public class Book {
-    private String ISBN;
-    private String title;
-    private String author;
-    private String publisher;
-    private String publishedDate;
+    @PrimaryKey(autoGenerate = true)
+    private int id;
+    private String isbn;
+    private String name;
+    private String authors;
+    private String date;
 
-    public String getISBN() {
-        return ISBN;
+    public Book(String isbn, String name, String authors, String date) {
+        this.isbn = isbn;
+        this.name = name;
+        this.authors = authors;
+        this.date = date;
     }
 
-    public void setISBN(String ISBN) {
-        this.ISBN = ISBN;
+
+    public int getId() {
+        return id;
     }
 
-    public String getTitle() {
-        return title;
+    public void setId(int id) {
+        this.id = id;
     }
 
-    public void setTitle(String title) {
-        this.title = title;
+    public String getIsbn() {
+        return isbn;
     }
 
-    public String getAuthor() {
-        return author;
+    public void setIsbn(String isbn) {
+        this.isbn = isbn;
     }
 
-    public void setAuthor(String author) {
-        this.author = author;
+    public String getName() {
+        return name;
     }
 
-    public String getPublisher() {
-        return publisher;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public void setPublisher(String publisher) {
-        this.publisher = publisher;
+    public String getAuthors() {
+        return authors;
     }
 
-    public String getPublishedDate() {
-        return publishedDate;
+    public void setAuthors(String authors) {
+        this.authors = authors;
     }
 
-    public void setPublishedDate(String publishedDate) {
-        this.publishedDate = publishedDate;
+    public String getDate() {
+        return date;
     }
 
-    public Book(String ISBN, String title, String author, String publisher, String publishedDate) {
-        this.ISBN = ISBN;
-        this.title = title;
-        this.author = author;
-        this.publisher = publisher;
-        this.publishedDate = publishedDate;
+    public void setDate(String date) {
+        this.date = date;
     }
 }
-

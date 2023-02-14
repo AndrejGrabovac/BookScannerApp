@@ -1,57 +1,80 @@
 package com.example.isbnscanner;
 
-import android.content.Context;
-import android.content.SharedPreferences;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ListView;
 
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
-import java.lang.reflect.Type;
 import java.util.ArrayList;
-
+import java.util.List;
 
 public class HistoryFragment extends Fragment {
 
-    private ListView listView;
-    private BookListAdapter adapter;
-    private ArrayList<Book> books;
-    public static final String SHARED_PREFERENCES_NAME = "BookInfo";
+    private RecyclerView recyclerView;
+    private BookAdapter bookAdapter;
+    private AppDatabase mDb;
+    private List<Book> books = new ArrayList<>();
 
-    @Nullable
+    public HistoryFragment() {
+        // Required empty public constructor
+    }
+
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                             Bundle savedInstanceState) {
+
         View view = inflater.inflate(R.layout.fragment_history, container, false);
 
-        listView = view.findViewById(R.id.listView);
-        books = new ArrayList<>();
-        adapter = new BookListAdapter(getActivity(), books);
-        listView.setAdapter(adapter);
+        recyclerView = view.findViewById(R.id.recycler_view);
+        mDb = AppDatabase.getInstance(getContext());
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        bookAdapter = new BookAdapter(getContext(), books);
+        recyclerView.setAdapter(bookAdapter);
+        retrieveBooks();
 
-        loadData();
+        bookAdapter.setOnItemLongClickListener(new BookAdapter.OnItemLongClickListener() {
+            @Override
+            public void onItemLongClick(final Book book) {
+                new AlertDialog.Builder(getContext())
+                        .setTitle("Delete Book")
+                        .setMessage("Are you sure you want to delete this book?")
+                        .setPositiveButton("YES", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                AppExecutors.getInstance().diskIO().execute(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        mDb.bookDao().delete(book);
+                                    }
+                                });
+                            }
+                        })
+                        .setNegativeButton("NO", null)
+                        .show();
+            }
+        });
 
         return view;
     }
 
-    private void loadData() {
-        SharedPreferences sharedPreferences = requireActivity().getSharedPreferences(SHARED_PREFERENCES_NAME, Context.MODE_PRIVATE);
-        Gson gson = new Gson();
-        String json = sharedPreferences.getString("book list", null);
-        Type type = new TypeToken<ArrayList<Book>>() {}.getType();
-        books = gson.fromJson(json, type);
-
-        if (books == null) {
-            books = new ArrayList<>();
-        }
-
-        adapter.notifyDataSetChanged();
+    private void retrieveBooks() {
+        AppExecutors.getInstance().diskIO().execute(new Runnable() {
+            @Override
+            public void run() {
+                final List<Book> books = mDb.bookDao().getAll();
+                AppExecutors.getInstance().mainThread().execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        bookAdapter.setBooks(books);
+                    }
+                });
+            }
+        });
     }
 }
