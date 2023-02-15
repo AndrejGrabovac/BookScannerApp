@@ -22,15 +22,15 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder
         this.mContext = context;
     }
 
-    public void setBooks(List<Book> books) {
+    /*public void setBooks(List<Book> books) {
         mBooks = books;
         notifyDataSetChanged();
-    }
+    }*/
 
     @NonNull
     @Override
     public BookViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View view = LayoutInflater.from(mContext).inflate(R.layout.book_item, parent, false);
+         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.book_item, parent, false);
          return new BookViewHolder(view);
     }
 
@@ -60,10 +60,10 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder
 
         public BookViewHolder(@NonNull View itemView) {
             super(itemView);
-            titleTextView = itemView.findViewById(R.id.title_text_view);
-            authorTextView = itemView.findViewById(R.id.author_text_view);
-            isbnTextView = itemView.findViewById(R.id.isbn_text_view);
-            publicationDateTextView = itemView.findViewById(R.id.publication_date_text_view);
+            titleTextView = itemView.findViewById(R.id.tv_title);
+            authorTextView = itemView.findViewById(R.id.tv_author);
+            isbnTextView = itemView.findViewById(R.id.tv_isbn);
+            publicationDateTextView = itemView.findViewById(R.id.tv_publishDate);
 
             itemView.setOnLongClickListener(new View.OnLongClickListener() {
                 @Override
@@ -72,6 +72,7 @@ public class BookAdapter extends RecyclerView.Adapter<BookAdapter.BookViewHolder
                         int position = getAdapterPosition();
                         if (position != RecyclerView.NO_POSITION) {
                             onItemLongClickListener.onItemLongClick(mBooks.get(position));
+                            notifyDataSetChanged();
                         }
                     }
                     return true;

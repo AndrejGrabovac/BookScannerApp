@@ -11,6 +11,8 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.android.volley.Request;
@@ -37,12 +39,14 @@ public class HomeFragment extends Fragment{
     private RequestQueue queue;
     private Context MainActivity;
 
+    private String isbn;
+    private String title;
+    private String authors;
+    private String publishedDate;
 
     public HomeFragment() {
         // Required empty public constructor
     }
-
-
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -84,7 +88,7 @@ public class HomeFragment extends Fragment{
                 Toast.makeText(MainActivity, "Scan cancelled", Toast.LENGTH_LONG).show();
             } else {
 
-                String isbn = result.getContents();
+                isbn = result.getContents();
                 isbnTextView.setText("ISBN: " + isbn);
                 getBookDetails(isbn);
             }
@@ -107,36 +111,24 @@ public class HomeFragment extends Fragment{
                             if (items.length() > 0) {
                                 JSONObject volumeInfo = items.getJSONObject(0).getJSONObject("volumeInfo");
 
-                                String title = volumeInfo.getString("title");
+                                title = volumeInfo.getString("title");
 
                                 JSONArray authorsArray = volumeInfo.getJSONArray("authors");
-                                String authors = "";
+                                authors = "";
                                 for (int i = 0; i < authorsArray.length(); i++) {
                                     authors += authorsArray.getString(i) + ", ";
                                 }
                                 authors = authors.substring(0, authors.length() - 2);
 
-                                String date = volumeInfo.getString("publishedDate");
+                                publishedDate = volumeInfo.getString("publishedDate");
 
                                 titleTextView.setText(String.format("Title: %s", title));
                                 authorTextView.setText(String.format("Authors: %s", authors));
-                                publicationDateTextView.setText(String.format("Publish date: %s", date));
+                                publicationDateTextView.setText(String.format("Publish date: %s", publishedDate));
 
-
-
-
-                                Book book = new Book(isbn,authors,title,date);
+                                Book book = new Book(isbn,authors,title,publishedDate);
 
                                 String finalAuthors = authors;
-                                AppExecutors.getInstance().diskIO().execute(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        book.setIsbn(isbn);
-                                        book.setAuthors(finalAuthors);
-                                        book.setName(title);
-                                        book.setDate(date);
-                                    }
-                                });
 
                                 AppExecutors.getInstance().diskIO().execute(new Runnable() {
                                     @Override
@@ -144,9 +136,13 @@ public class HomeFragment extends Fragment{
                                         AppDatabase db = AppDatabase.getInstance(getContext());
                                         BookDao bookDao = db.bookDao();
                                         bookDao.insert(book);
+
+                                        book.setIsbn(isbn);
+                                        book.setAuthors(finalAuthors);
+                                        book.setName(title);
+                                        book.setDate(publishedDate);
                                     }
                                 });
-
                             } else {
                                 Toast.makeText(getContext(), "No book found", Toast.LENGTH_SHORT).show();
                             }
@@ -162,5 +158,25 @@ public class HomeFragment extends Fragment{
                     }
                 });
         queue.add(jsonObjectRequest);
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        if (savedInstanceState != null) {
+            isbn = savedInstanceState.getString("isbn");
+            title = savedInstanceState.getString("title");
+            authors = savedInstanceState.getString("authors");
+            publishedDate = savedInstanceState.getString("publishedDate");
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(@NonNull Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString("isbn", isbn);
+        outState.putString("title", title);
+        outState.putString("authors", authors);
+        outState.putString("publishedDate", publishedDate);
     }
 }
